@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<openerp>
+    <data>
+
+        <record id="view_hr_timesheet_sheet_filter_custom" model="ir.ui.view">
+            <field name="name">hr_timesheet_sheet.sheet.filter</field>
+            <field name="model">hr_timesheet_sheet.sheet</field>
+            <field name="inherit_id" ref="hr_timesheet_sheet.view_hr_timesheet_sheet_filter"/>
+            <field name="type">search</field>
+            <field name="arch" type="xml">
+                <filter name="to_approve" position="after">
+                    <separator orientation="vertical"/>
+                    <filter icon="terp-go-year" string="Current Year"
+                        domain="[('date_from','&lt;=', time.strftime('%%Y-%%m-%%d')),('date_from','&gt;=',time.strftime('%%Y-01-01'))]"
+                        help="Current Year"/>
+                    <filter icon="terp-go-month" string="Current Month" name="month"
+                        domain="[('date_from','&lt;=',(context_today()+relativedelta(day=31)).strftime('%%Y-%%m-%%d')),('date_from','&gt;=',(context_today()-relativedelta(day=1)).strftime('%%Y-%%m-%%d'))]"
+                        help="Current Month"/>
+                    <filter icon="terp-go-week" string="Current Week" separator="1" name="week"
+                        domain="[('date_from','&gt;=',(context_today()+relativedelta(days=-6,weekday=0)).strftime('%%Y-%%m-%%d')),('date_from','&lt;=',(context_today()+relativedelta(weekday=6)).strftime('%%Y-%%m-%%d'))]"
+                        help="Current Week"/>
+                </filter>
+
+            </field>
+        </record>
+
+        <record id="hr_timesheet_sheet.act_hr_timesheet_sheet_form" model="ir.actions.act_window">
+            <field name="context">{'search_default_my_timesheet':1, 'search_default_to_approve':1}</field>
+        </record>
+
+        <record model="ir.ui.view" id="hr_timesheet_sheet_form_with_activity">
+            <field name="name">hr.timesheet.sheet.form</field>
+            <field name="model">hr_timesheet_sheet.sheet</field>
+            <field name="inherit_id" ref="hr_timesheet_sheet.hr_timesheet_sheet_form"/>
+            <field name="arch" type="xml">
+                <xpath 
+                    expr="//button[@name='done']"
+                    position="replace"
+                    >
+                    <field name='is_uid_manager' invisible="1"/>
+                    <button name="done"  string="Approve" type="workflow" class="oe_highlight" attrs="{'invisible':['|',('is_uid_manager','=',False),('state','!=','confirm')]}"/>
+                </xpath>
+                <xpath 
+                    expr="//button[@name='cancel']"
+                    position="replace"
+                    >
+                    <button name="cancel" string="Refuse" type="workflow" attrs="{'invisible':['|',('is_uid_manager','=',False),('state','!=','confirm')]}"/>
+                </xpath>                
+                <xpath
+                    expr="/form/sheet/notebook/page[@string='Details']/field[@name='timesheet_ids']/tree[@string='Timesheet Activities']/field[@name='account_id']"
+                    position="replace">
+                    <field domain="[('type','in',['normal', 'contract']), ('state', '&lt;&gt;', 'close'),('use_timesheets','=',1),('is_proj_member','=',True)]" name="account_id" on_change="on_change_account_id(account_id, user_id)" context="{'default_use_timesheets': 1, 'check_uid':user_id}"/>
+                    <field name="task_id" required="1" context="{'account_id' : account_id}"
+                        domain="[('state','=','open'), ('project_id.analytic_account_id','=',account_id)]"/>
+                </xpath>
+                <xpath
+                    expr="/form/sheet/notebook/page[@string='Details']/field[@name='timesheet_ids']/form[@string='Timesheet Activities']/field[@name='account_id']"
+                    position="replace">
+                    <field domain="[('type','in',['normal', 'contract']), ('state', '&lt;&gt;', 'close'),('use_timesheets','=',1),('is_proj_member','=',True)]" name="account_id" on_change="on_change_account_id(account_id, user_id)" context="{'default_use_timesheets': 1, 'check_uid':user_id}"/>
+                    <field name="task_id" required="1" context="{'account_id' : account_id}"
+                        domain="[('state','=','open'), ('project_id.analytic_account_id','=',account_id)]"/>
+                </xpath>
+            </field>
+        </record>
+        
+        <!-- View only timesheets where the User has manager rights over the employee (supervisor or above) -->
+        <record id="hr_timesheet_sheet.act_hr_timesheet_sheet_form" model="ir.actions.act_window">
+            <field name="domain">[('is_uid_manager','=',True)]</field>
+        </record> 
+        <!-- Employee should be able to approve timesheets if someone submits to him  -->
+        <menuitem action="hr_timesheet_sheet.act_hr_timesheet_sheet_form" id="hr_timesheet_sheet.menu_act_hr_timesheet_sheet_form" parent="hr_attendance.menu_hr_time_tracking"
+             sequence="2" groups="base.group_user"/>
+        
+        <!-- Approve and Reject workflow actions only for Managers -->
+        <record id="hr_timesheet_sheet.t2" model="workflow.transition">
+            <field name="condition">is_manager()</field>
+        </record>
+        <record id="hr_timesheet_sheet.t3" model="workflow.transition">
+            <field name="condition">is_manager()</field>
+        </record>
+        
+    </data>
+</openerp>
