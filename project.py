@@ -20,6 +20,9 @@ from openerp.osv import fields, osv
 from openerp import tools
 
 class project(osv.Model):
+    _name='project.project'
+    _inherit='project.project'
+        
     def map_tasks(self, cr, uid, old_project_id, new_project_id, context=None):
         """ copy and map tasks from old to new project """
         if context is None:
