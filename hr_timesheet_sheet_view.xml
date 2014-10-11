@@ -38,6 +38,7 @@
                     position="replace"
                     >
                     <field name='is_uid_manager' invisible="1"/>
+                    <field name='is_uid' invisible="1" />
                     <button name="done"  string="Approve" type="workflow" class="oe_highlight" attrs="{'invisible':['|',('is_uid_manager','=',False),('state','!=','confirm')]}"/>
                 </xpath>
                 <xpath 
@@ -45,6 +46,7 @@
                     position="replace"
                     >
                     <button name="cancel" string="Refuse" type="workflow" attrs="{'invisible':['|',('is_uid_manager','=',False),('state','!=','confirm')]}"/>
+                    <button name="recall" string="Recall" type="workflow" attrs="{'invisible':['|',('is_uid','=',False),('state','!=','confirm')]}"/>
                 </xpath>                
                 <xpath
                     expr="/form/sheet/notebook/page[@string='Details']/field[@name='timesheet_ids']/tree[@string='Timesheet Activities']/field[@name='account_id']"
@@ -75,9 +77,13 @@
         <record id="hr_timesheet_sheet.t2" model="workflow.transition">
             <field name="condition">is_manager()</field>
         </record>
-        <record id="hr_timesheet_sheet.t3" model="workflow.transition">
-            <field name="condition">is_manager()</field>
+        <record id="hr_timesheet_sheet.t4" model="workflow.transition">
+            <field name="act_from" ref="hr_timesheet_sheet.act_confirm"/>
+            <field name="act_to" ref="hr_timesheet_sheet.act_draft"/>
+            <field name="signal">recall</field>
         </record>
+
+
         
     </data>
 </openerp>

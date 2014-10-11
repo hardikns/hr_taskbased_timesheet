@@ -105,7 +105,8 @@ class HrAnalyticTimesheet(orm.Model):
             ('new', 'Pending'),
             ('draft','Pending'),
             ('confirm','Pending'),
-            ('done','Confirmed')], string="Timesheet State",
+            ('done','Confirmed'),
+            ('posted', 'Posted')], string="Timesheet State",
             store = {
                     'hr_timesheet_sheet.sheet': (_get_hr_timesheet_sheet, ['state'], 10),
                     'hr.analytic.timesheet': (lambda self,cr,uid,ids,context=None: ids, None, 10),

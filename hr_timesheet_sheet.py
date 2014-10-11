@@ -31,6 +31,19 @@ class hr_timesheet_sheet(osv.osv):
         for sheet_id in ids:
             res.update({sheet_id:self.is_manager(cr, uid, ids)})
         return res
+
+    def _is_user(self, cr, uid, ids, name, arg, context=None):
+        res = {}
+        for sheet_id in ids:
+            res.update({sheet_id:self.is_user(cr, uid, ids)})
+        return res
+    
+    def is_user(self, cr, uid, ids, context=None):
+        if uid == SUPERUSER_ID:
+            return True
+        user_id = self.read(cr, uid, ids[0], ['user_id'])['user_id']
+        if isinstance(user_id, tuple) and user_id[0] == uid:
+            return True
         
     def is_manager(self,cr,uid,ids,context=None):
         if uid == SUPERUSER_ID:
@@ -58,6 +71,17 @@ class hr_timesheet_sheet(osv.osv):
         'manager_id': fields.related('employee_id', 'parent_id', type="many2one", relation="hr.employee", store=True, string="Manager", required=False, readonly=True),
         'manager_uid' : fields.related('manager_id', 'user_id', type="many2one", relation="res.users", store=True, string="Manager User", required=False, readonly=True),
         'is_uid_manager': fields.function(_is_manager, method=True, string='Is Manager', type="boolean", fnct_search=_is_manager_srch),
+        'is_uid': fields.function(_is_user, method=True, string='Is User', type="boolean"),
+        'state' : fields.selection([
+            ('new', 'New'),
+            ('draft','Open'),
+            ('confirm','Waiting Approval'),
+            ('done','Approved'),
+            ('posted', 'Posted')], 'Status', select=True, required=True, readonly=True,
+            help=' * The \'Draft\' status is used when a user is encoding a new and unconfirmed timesheet. \
+                \n* The \'Confirmed\' status is used for to confirm the timesheet by user. \
+                \n* The \'Done\' status is used when users timesheet is accepted by his/her senior.\
+                \n* The \'Posted\' status is used when user timesheet is posted to accounts and locked for editing.'),
     }
     
     TSS_ERROR = "Error: Timesheet dates are not within the date range or hours are negative"
@@ -79,3 +103,8 @@ class hr_timesheet_sheet(osv.osv):
         res = super(hr_timesheet_sheet, self).unlink(cr, uid, ids, context=context)
         return res 
     
+    def post_timesheets(self, cr, uid, ids, context=None):
+        if not isinstance(ids, list):
+            ids = [ids]
+        self.write(cr, uid, ids , {'state':'posted'})
+        return True

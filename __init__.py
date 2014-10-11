@@ -20,3 +20,4 @@
 import hr_analytic_timesheet
 import hr_timesheet_sheet
 import project_task
+import project
